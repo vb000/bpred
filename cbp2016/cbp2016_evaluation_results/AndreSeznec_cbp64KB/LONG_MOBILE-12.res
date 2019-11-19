@@ -1,0 +1,3 @@
+ (TOTAL 523355 bits 511 Kbits)   MPKBr_1K         	 :    14.0000  MPKBr_10K         	 :     9.9000  MPKBr_100K         	 :     8.1200  MPKBr_1M         	 :     6.1130  MPKBr_10M         	 :     2.8009  MPKBr_30M         	 :     1.7971  MPKBr_60M         	 :     1.5171  MPKBr_100M         	 :     1.4711Edge sequence list access window overflow!
+
+  TRACE 	 : ../traces/LONG_MOBILE-12.bt9.trace.gz  NUM_INSTRUCTIONS            	 :  925056138  NUM_BR                      	 :  150242815  NUM_UNCOND_BR               	 :   60128077  NUM_CONDITIONAL_BR          	 :   90114738  NUM_MISPREDICTIONS          	 :     217783  MISPRED_PER_1K_INST         	 :     0.2354

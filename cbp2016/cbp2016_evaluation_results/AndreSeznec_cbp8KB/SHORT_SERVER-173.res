@@ -1,0 +1,2 @@
+ (TOTAL 67349)
+   MPKBr_1K         	 :    59.0000  MPKBr_10K         	 :    17.0000  MPKBr_100K         	 :    11.4100  MPKBr_1M         	 :    15.8560  MPKBr_10M         	 :     9.1974  MPKBr_30M         	 :    18.1417  TRACE 	 : ../traces/SHORT_SERVER-173.bt9.trace.gz  NUM_INSTRUCTIONS            	 :  209999900  NUM_BR                      	 :   31995950  NUM_UNCOND_BR               	 :    1286318  NUM_CONDITIONAL_BR          	 :   30709632  NUM_MISPREDICTIONS          	 :     546295  MISPRED_PER_1K_INST         	 :     2.6014

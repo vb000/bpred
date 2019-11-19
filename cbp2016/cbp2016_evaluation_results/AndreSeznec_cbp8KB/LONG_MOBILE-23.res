@@ -1,0 +1,2 @@
+ (TOTAL 67349)
+   MPKBr_1K         	 :    82.0000  MPKBr_10K         	 :    46.9000  MPKBr_100K         	 :    16.6900  MPKBr_1M         	 :    40.6860  MPKBr_10M         	 :    27.8277  MPKBr_30M         	 :    26.9921  MPKBr_60M         	 :    26.6337  TRACE 	 : ../traces/LONG_MOBILE-23.bt9.trace.gz  NUM_INSTRUCTIONS            	 : 1658101133  NUM_BR                      	 :   97906477  NUM_UNCOND_BR               	 :   27848166  NUM_CONDITIONAL_BR          	 :   70058311  NUM_MISPREDICTIONS          	 :    2513133  MISPRED_PER_1K_INST         	 :     1.5157
