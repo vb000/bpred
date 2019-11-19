@@ -1,2 +1,0 @@
- (TOTAL 67349)
-   MPKBr_1K         	 :    86.0000  MPKBr_10K         	 :    79.9000  MPKBr_100K         	 :    75.2000  MPKBr_1M         	 :    68.7560  MPKBr_10M         	 :    62.6364  TRACE 	 : ../traces/SHORT_MOBILE-52.bt9.trace.gz  NUM_INSTRUCTIONS            	 :   97600104  NUM_BR                      	 :   12267282  NUM_UNCOND_BR               	 :     152911  NUM_CONDITIONAL_BR          	 :   12114371  NUM_MISPREDICTIONS          	 :     756896  MISPRED_PER_1K_INST         	 :     7.7551
