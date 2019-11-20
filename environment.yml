@@ -1,0 +1,8 @@
+name: bpred
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - pytorch
+prefix: /mnt/users/ssd1/homes/bandhav/nbu_spin/miniconda3/envs/bpred
+
