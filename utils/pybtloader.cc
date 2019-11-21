@@ -7,5 +7,4 @@
 
 using namespace pybtloader;
 
-cbp2004::cbp2004() {
-  cbptr = cbp_trace_reader_c(
+/* TODO: A more challenging but a cleaner way to load data from CBP frameowrks */
