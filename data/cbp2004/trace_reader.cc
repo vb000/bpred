@@ -30,8 +30,10 @@ int main(int argc, char* argv[]) {
     // predict_branch() tells the trace reader how you have predicted the branch
     bool actual_taken    = cbptr.predict_branch(predicted_taken);
         
-    if(br.is_conditional)
-      fprintf(trace_out, "%d %d\n", br.instruction_addr, actual_taken);
+    if(br.is_conditional) {
+      uint total_insts = cbptr.get_num_insts();
+      fprintf(trace_out, "%d %d %d\n", br.instruction_addr, actual_taken, total_insts);
+    }
 
     // finally, update_predictor() is used to update your predictor with the
     // correct branch result

@@ -63,6 +63,9 @@ public:
     // returns true if there is still another branch record in the trace.  false if the end of the branch trace 
     // has been reached.
     bool get_branch_record(branch_record_c *branch_record); 
+
+    // VB: added this to access total number of insts for stats
+    uint get_num_insts() {return stat_num_insts;};
 };
 
 #endif // TREAD_H_SEEN

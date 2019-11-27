@@ -15,9 +15,9 @@ class BranchTraceDataset(torch.utils.data.Dataset):
     self.data = []
     with open(trace_path, 'rb') as trace_file:
       for line in trace_file:
-        # Store data as a list of [<pc>, <is_taken?>] lists
-        pc, taken = (int(x) for x in line.strip().split())
-        self.data += [[pc, taken]]
+        # Store data as a list of [<pc>, <is_taken?>, inst_count] lists
+        pc, taken, inst_count = (int(x) for x in line.strip().split())
+        self.data += [[pc, taken, inst_count]]
     
     self.bhr_len = bhr_len
     self.bhr_mask = (1 << bhr_len) - 1
@@ -42,11 +42,14 @@ class BranchTraceDataset(torch.utils.data.Dataset):
     # Label
     label = self.data[idx][1]
 
+    # Inst count
+    inst_count = self.data[idx][2]
+
     # Build the tensor item
     bpred_idx_tensor = torch.Tensor([[((bpred_idx>>x) & 1) for x in range(self.bhr_len)]])
     label_tensor = torch.LongTensor([label])
 
-    return bpred_idx_tensor, label_tensor
+    return bpred_idx_tensor, label_tensor, inst_count
 
 class BPredFPNet(torch.nn.Module):
   def __init__(self, bhr_len):
@@ -74,7 +77,7 @@ if __name__ == '__main__':
   try:
     correct = 0
     total = 0
-    for idx, (data, label) in enumerate(btl):
+    for idx, (data, label, inst_count) in enumerate(btl):
       optimizer.zero_grad()
       output = model(data)
       loss = model.loss(output, label)
@@ -86,7 +89,8 @@ if __name__ == '__main__':
       if label == predicted_idx: correct += 1
       total += 1
 
-      if (idx > 200000):
+      if (idx > 100000):
         exit(1)
   finally:
-    print("correct = {} / {}; acc = {:0.2f}%".format(correct, total, (correct/total)*100.0))
+    print("correct = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
+      correct, total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
