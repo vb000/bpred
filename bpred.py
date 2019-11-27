@@ -6,6 +6,9 @@ import torch.optim as optim
 import sys
 
 class BranchTraceDataset(torch.utils.data.Dataset):
+  """
+  Branch trace index = pc ^ bhr
+  """
   def __init__(self, trace_path, bhr_len):
     super(BranchTraceDataset, self).__init__()
 
@@ -83,7 +86,7 @@ if __name__ == '__main__':
       if label == predicted_idx: correct += 1
       total += 1
 
-      if (idx > 100000):
+      if (idx > 200000):
         exit(1)
   finally:
-    print("correct = {} / {}".format(correct, total))
+    print("correct = {} / {}; acc = {:0.2f}%".format(correct, total, (correct/total)*100.0))
