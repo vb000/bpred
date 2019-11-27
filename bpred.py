@@ -54,7 +54,6 @@ class BPredFPNet(torch.nn.Module):
   
   def forward(self, data):
     x = self.fc1(data)
-    x = F.relu(x)
     x = self.lsf(x)
     return x
 
