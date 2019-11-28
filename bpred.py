@@ -4,10 +4,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import sys
+import multiprocessing as mp
 
 class BranchTraceDataset(torch.utils.data.Dataset):
   """
-  Branch trace index = pc ^ bhr
+  Branch trace dataset
+
+  Iterator returns (hash, taken) tuple
+
+  hash = pc ^ bhr
   """
   def __init__(self, trace_path, bhr_len):
     super(BranchTraceDataset, self).__init__()
@@ -66,18 +71,22 @@ class BPredFPNet(torch.nn.Module):
   def loss(self, prediction, label):
     return self.lossfunc(prediction, label)
 
-if __name__ == '__main__':
-  BHR_LEN = 16
-  LR = 0.1
+def train(model, dataset, optim, trace_file, bhr_len, table_size):
+  """
+  Branch prediction training routine
 
-  btl = BranchTraceDataset(sys.argv[1], BHR_LEN)
-  model = BPredFPNet(BHR_LEN)
-  optimizer = optim.SGD(model.parameters(), lr=LR)
 
+  Args:
+
+  model -- torch model of predictor
+  trace_file -- path to branch trace
+  bhr_len -- branch history register len
+  table_size -- Number of unique hash values
+  """
   try:
     correct = 0
     total = 0
-    for idx, (data, label, inst_count) in enumerate(btl):
+    for idx, (data, label, inst_count) in enumerate(dataset):
       optimizer.zero_grad()
       output = model(data)
       loss = model.loss(output, label)
@@ -94,3 +103,13 @@ if __name__ == '__main__':
   finally:
     print("correct = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
       correct, total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
+
+if __name__ == '__main__':
+  BHR_LEN = 16
+  LR = 0.1
+
+  btl = BranchTraceDataset(sys.argv[1], BHR_LEN)
+  model = BPredFPNet(BHR_LEN)
+  optimizer = optim.SGD(model.parameters(), lr=LR)
+  
+  train(model, btl, optimizer, sys.argv[1], BHR_LEN, 1)
