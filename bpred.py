@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import sys
+import os
 import multiprocessing as mp
 
 class BranchTraceDataset(torch.utils.data.Dataset):
@@ -16,7 +17,7 @@ class BranchTraceDataset(torch.utils.data.Dataset):
   """
   def __init__(self, trace_path, bhr_len, num_samples):
     super(BranchTraceDataset, self).__init__()
-
+    self.trace_path = trace_path
     self.data = []
     with open(trace_path, 'rb') as trace_file:
       for i, line in enumerate(trace_file):
@@ -58,6 +59,9 @@ class BranchTraceDataset(torch.utils.data.Dataset):
     label_tensor = torch.LongTensor([label])
 
     return bpred_idx_tensor, label_tensor, inst_count
+  
+  def __str__(self):
+    return os.path.basename(self.trace_path)
 
 class BPredFPNet(torch.nn.Module):
   def __init__(self, bhr_len):
@@ -104,13 +108,13 @@ def train(model, dataset, optim, trace_file, bhr_len, table_size, num_samples):
       if (idx > num_samples):
         break
   finally:
-    print("correct = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
-      correct, total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
+    print("{}: correct = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
+      dataset, correct, total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
 
 if __name__ == '__main__':
   BHR_LEN = 16
   LR = 0.1
-  NUM_SAMPLES = 10000
+  NUM_SAMPLES = 1000
 
   btl = BranchTraceDataset(sys.argv[1], BHR_LEN, NUM_SAMPLES)
   model = BPredFPNet(BHR_LEN)
