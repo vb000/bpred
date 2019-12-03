@@ -78,17 +78,19 @@ class BPredFPNet(torch.nn.Module):
   def loss(self, prediction, label):
     return self.lossfunc(prediction, label)
 
-def train(trace_file, bhr_len, table_size, num_samples):
+def train(pid, trace_file, bhr_len, table_size, num_samples, results):
   """
   Branch prediction training routine
 
 
   Args:
 
+  pid -- process id
   trace_file -- branch trace data file
   bhr_len -- branch history register len
   table_size -- Number of unique hash values
   num_samples -- Number of samples to train on
+  results -- result dict
   """
   dataset = BranchTraceDataset(trace_file, BHR_LEN, NUM_SAMPLES)
 
@@ -121,13 +123,31 @@ def train(trace_file, bhr_len, table_size, num_samples):
       if (idx > num_samples):
         break
   finally:
+    results[pid] = ((total - correct), inst_count) 
     print("{} ({}): miss = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
       dataset, inst_count, (total - correct), total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
 
 if __name__ == '__main__':
-  NUM_SAMPLES = 1000
+  NUM_SAMPLES = 100000
   TABLE_SIZE = 256
   BHR_LEN = 24
   LR = 0.5
 
-  train(sys.argv[1], BHR_LEN, TABLE_SIZE, NUM_SAMPLES)
+  jobs = []
+  results = mp.Manager().dict()
+
+  for i in range(1, len(sys.argv)):
+    p = mp.Process(target=train, args=(i, sys.argv[i], BHR_LEN, TABLE_SIZE, NUM_SAMPLES, results))
+    jobs.append(p)
+    p.start()
+
+  for p in jobs:
+    p.join()
+
+  miss = 0
+  inst_count = 0
+  for key in results.keys():
+    miss += results[key][0]
+    inst_count += results[key][1]
+
+  print("Total missPerKI = {:0.3f}".format((1000.0 * miss) / inst_count))
