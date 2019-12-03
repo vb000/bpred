@@ -45,8 +45,8 @@ class BranchTraceDataset(torch.utils.data.Dataset):
 
       bhr = (bhr << 1) | int(taken)
 
-    # Prediction index = pc ^ bhr
-    bpred_idx = (self.data[idx][0] ^ bhr) & self.bhr_mask
+    # PC
+    pc = self.data[idx][0]
 
     # Label
     label = self.data[idx][1]
@@ -55,10 +55,10 @@ class BranchTraceDataset(torch.utils.data.Dataset):
     inst_count = self.data[idx][2]
 
     # Build the tensor item
-    bpred_idx_tensor = torch.Tensor([[((bpred_idx>>x) & 1) for x in range(self.bhr_len)]])
+    bhr_tensor = torch.Tensor([[((bhr>>x) & 1) for x in range(self.bhr_len)]])
     label_tensor = torch.LongTensor([label])
 
-    return bpred_idx_tensor, label_tensor, inst_count
+    return pc, bhr_tensor, label_tensor, inst_count
   
   def __str__(self):
     return os.path.basename(self.trace_path)
@@ -78,22 +78,33 @@ class BPredFPNet(torch.nn.Module):
   def loss(self, prediction, label):
     return self.lossfunc(prediction, label)
 
-def train(model, dataset, optim, trace_file, bhr_len, table_size, num_samples):
+def train(dataset, bhr_len, table_size, num_samples):
   """
   Branch prediction training routine
 
 
   Args:
 
-  model -- torch model of predictor
-  trace_file -- path to branch trace
+  dataset -- branch trace dataset
   bhr_len -- branch history register len
   table_size -- Number of unique hash values
+  num_samples -- Number of samples to train on
   """
+  mdl_table = []
+  optim_table = []
+  for i in range(table_size):
+    model = BPredFPNet(BHR_LEN)
+    mdl_table += [model]
+    optim_table += [optim.SGD(model.parameters(), lr=LR)]
+  
   try:
     correct = 0
     total = 0
-    for idx, (data, label, inst_count) in enumerate(dataset):
+    for idx, (pc, data, label, inst_count) in enumerate(dataset):
+      table_idx = pc % table_size
+      model = mdl_table[table_idx]
+      optimizer = optim_table[table_idx]
+
       optimizer.zero_grad()
       output = model(data)
       loss = model.loss(output, label)
@@ -108,16 +119,14 @@ def train(model, dataset, optim, trace_file, bhr_len, table_size, num_samples):
       if (idx > num_samples):
         break
   finally:
-    print("{}: correct = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
-      dataset, correct, total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
+    print("{} ({}): miss = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
+      dataset, inst_count, (total - correct), total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
 
 if __name__ == '__main__':
-  BHR_LEN = 16
+  NUM_SAMPLES = 100000
+  TABLE_SIZE = 1024
+  BHR_LEN = 24
   LR = 0.1
-  NUM_SAMPLES = 1000
 
   btl = BranchTraceDataset(sys.argv[1], BHR_LEN, NUM_SAMPLES)
-  model = BPredFPNet(BHR_LEN)
-  optimizer = optim.SGD(model.parameters(), lr=LR)
-  
-  train(model, btl, optimizer, sys.argv[1], BHR_LEN, 1, NUM_SAMPLES)
+  train(btl, BHR_LEN, TABLE_SIZE, NUM_SAMPLES)
