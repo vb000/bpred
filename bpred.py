@@ -129,9 +129,12 @@ def train(pid, trace_file, bhr_len, table_size, num_samples, results):
 
 if __name__ == '__main__':
   NUM_SAMPLES = 100000
-  TABLE_SIZE = 256
+  TABLE_SIZE = 1024
   BHR_LEN = 24
   LR = 0.5
+
+  print("\nSamples={}; TABLE_SIZE={}; BHR_LEN={}; LR={}\n".format(
+    NUM_SAMPLES, TABLE_SIZE, BHR_LEN, LR))
 
   jobs = []
   results = mp.Manager().dict()
@@ -150,4 +153,5 @@ if __name__ == '__main__':
     miss += results[key][0]
     inst_count += results[key][1]
 
-  print("Total missPerKI = {:0.3f}".format((1000.0 * miss) / inst_count))
+  print("Samples={}; TABLE_SIZE={}; BHR_LEN={}; LR={}; Total missPerKI = {:0.3f}".format(
+    NUM_SAMPLES, TABLE_SIZE, BHR_LEN, LR, (1000.0 * miss) / inst_count))
