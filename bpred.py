@@ -78,18 +78,20 @@ class BPredFPNet(torch.nn.Module):
   def loss(self, prediction, label):
     return self.lossfunc(prediction, label)
 
-def train(dataset, bhr_len, table_size, num_samples):
+def train(trace_file, bhr_len, table_size, num_samples):
   """
   Branch prediction training routine
 
 
   Args:
 
-  dataset -- branch trace dataset
+  trace_file -- branch trace data file
   bhr_len -- branch history register len
   table_size -- Number of unique hash values
   num_samples -- Number of samples to train on
   """
+  dataset = BranchTraceDataset(trace_file, BHR_LEN, NUM_SAMPLES)
+
   mdl_table = []
   optim_table = []
   for i in range(table_size):
@@ -123,10 +125,9 @@ def train(dataset, bhr_len, table_size, num_samples):
       dataset, inst_count, (total - correct), total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
 
 if __name__ == '__main__':
-  NUM_SAMPLES = 100000
-  TABLE_SIZE = 1024
+  NUM_SAMPLES = 1000
+  TABLE_SIZE = 256
   BHR_LEN = 24
-  LR = 0.1
+  LR = 0.5
 
-  btl = BranchTraceDataset(sys.argv[1], BHR_LEN, NUM_SAMPLES)
-  train(btl, BHR_LEN, TABLE_SIZE, NUM_SAMPLES)
+  train(sys.argv[1], BHR_LEN, TABLE_SIZE, NUM_SAMPLES)
