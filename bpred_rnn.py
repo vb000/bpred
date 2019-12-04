@@ -67,12 +67,13 @@ class BPredFPNet(torch.nn.Module):
   def __init__(self, bhr_len, hidden_size):
     super(BPredFPNet, self).__init__()
     self.rnn = torch.nn.GRU(bhr_len, hidden_size)
-    #self.fc = torch.nn.Linear(hidden_size, 2)
+    self.fc = torch.nn.Linear(hidden_size, 2)
     self.lsf = torch.nn.LogSoftmax(2)
     self.lossfunc = nn.CrossEntropyLoss(reduction='sum')
   
   def forward(self, data, h=None):
     x,h  = self.rnn(data, h)
+    x = self.fc(x)
     x = self.lsf(x)
     return x, h
 
@@ -146,7 +147,7 @@ if __name__ == '__main__':
   NUM_SAMPLES = 10000
   TABLE_SIZE = 512
   HIDDEN_SIZE = 2
-  BHR_LEN = 16
+  BHR_LEN = 8
   LR = 0.15
 
   print("\nSamples={}; TABLE_SIZE={}; HIDDEN_SIZE={}; BHR_LEN={}; LR={}\n".format(
