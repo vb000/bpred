@@ -125,8 +125,8 @@ def train(pid, trace_file, lr, bhr_len, table_size, num_samples, results):
       if label == predicted_idx: correct += 1
       total += 1
 
-      if total % 1000 == 0:
-        mpkis += [1000.0* (correct - prev_correct) / (inst_count - prev_inst_count)]
+      if total % 100 == 0:
+        mpkis += [1000.0* (total - correct) / (inst_count)]
         prev_correct = correct
         prec_inst_count = inst_count
 
@@ -139,10 +139,12 @@ def train(pid, trace_file, lr, bhr_len, table_size, num_samples, results):
     plt.plot(mpkis)
     plt.ylabel('Temporal missPerKI')
     plt.xlabel('Num predictions * 1000')
+    print("bpred = ", mpkis)
+    plt.show()
     plt.savefig(str(dataset) + '_' + str(num_samples) + '_' + str(table_size) + '_' + str(bhr_len) + '_' + str(lr) + 'bpred.png')
 
 if __name__ == '__main__':
-  NUM_SAMPLES = 5000000
+  NUM_SAMPLES = 10000
   TABLE_SIZE = 512
   BHR_LEN = 16
   LR = 0.15
