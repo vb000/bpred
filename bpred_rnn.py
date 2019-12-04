@@ -6,6 +6,7 @@ import torch.optim as optim
 import sys
 import os
 import multiprocessing as mp
+import matplotlib.pyplot as plt
 
 class BranchTraceDataset(torch.utils.data.Dataset):
   """
@@ -80,7 +81,7 @@ class BPredFPNet(torch.nn.Module):
   def loss(self, prediction, label):
     return self.lossfunc(prediction.view(-1, 2), label.view(-1))
 
-def train(pid, trace_file, hidden_size, bhr_len, table_size, num_samples, results):
+def train(pid, trace_file, lr, hidden_size, bhr_len, table_size, num_samples, results):
   """
   Branch prediction training routine
 
@@ -89,13 +90,14 @@ def train(pid, trace_file, hidden_size, bhr_len, table_size, num_samples, result
 
   pid -- process id
   trace_file -- branch trace data file
+  lr -- learning rate
   hidden_size -- hidden state len
   bhr_len -- branch history register len
   table_size -- Number of unique hash values
   num_samples -- Number of samples to train on
   results -- result dict
   """
-  dataset = BranchTraceDataset(trace_file, bhr_len, NUM_SAMPLES)
+  dataset = BranchTraceDataset(trace_file, bhr_len, num_samples)
 
   mdl_table = []
   optim_table = []
@@ -103,12 +105,15 @@ def train(pid, trace_file, hidden_size, bhr_len, table_size, num_samples, result
   for i in range(table_size):
     model = BPredFPNet(bhr_len, hidden_size)
     mdl_table += [model]
-    optim_table += [optim.Adam(model.parameters(), lr=LR)]
+    optim_table += [optim.Adam(model.parameters(), lr=lr)]
     hidden_table += [None]
   
   try:
     correct = 0
     total = 0
+    mpkis = []
+    prev_correct = 0
+    prev_inst_count = 0
     for idx, (pc, data, label, inst_count) in enumerate(dataset):
       table_idx = pc % table_size
       model = mdl_table[table_idx]
@@ -136,12 +141,22 @@ def train(pid, trace_file, hidden_size, bhr_len, table_size, num_samples, result
       if label == predicted_idx: correct += 1
       total += 1
 
+      if total % 1000 == 0:
+        mpkis += [1000.0* (correct - prev_correct) / (inst_count - prev_inst_count)]
+        prev_correct = correct
+        prec_inst_count = inst_count
+
       if (idx > num_samples):
         break
   finally:
     results[pid] = ((total - correct), inst_count) 
     print("{} ({}): miss = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
       dataset, inst_count, (total - correct), total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
+    plt.plot(mpkis)
+    plt.ylabel('Local missPerKI')
+    plt.xlabel('Num predictions * 1000')
+    plt.show()
+    plt.savefig(str(dataset) + '_' + str(num_samples) + '_' + str(table_size) + '_' + str(bhr_len) + '_' + str(lr) + 'bpred_rnn.png')
 
 if __name__ == '__main__':
   NUM_SAMPLES = 10000
@@ -157,7 +172,7 @@ if __name__ == '__main__':
   results = mp.Manager().dict()
 
   for i in range(1, len(sys.argv)):
-    p = mp.Process(target=train, args=(i, sys.argv[i], HIDDEN_SIZE, BHR_LEN, TABLE_SIZE, NUM_SAMPLES, results))
+    p = mp.Process(target=train, args=(i, sys.argv[i], LR, HIDDEN_SIZE, BHR_LEN, TABLE_SIZE, NUM_SAMPLES, results))
     jobs.append(p)
     p.start()
 
