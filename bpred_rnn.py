@@ -155,7 +155,6 @@ def train(pid, trace_file, lr, hidden_size, bhr_len, table_size, num_samples, re
     plt.plot(mpkis)
     plt.ylabel('Temporal missPerKI')
     plt.xlabel('Num predictions * 1000')
-    plt.show()
     plt.savefig(str(dataset) + '_' + str(num_samples) + '_' + str(table_size) + '_' + str(bhr_len) + '_' + str(lr) + 'bpred_rnn.png')
 
 if __name__ == '__main__':

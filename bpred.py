@@ -139,7 +139,6 @@ def train(pid, trace_file, lr, bhr_len, table_size, num_samples, results):
     plt.plot(mpkis)
     plt.ylabel('Temporal missPerKI')
     plt.xlabel('Num predictions * 1000')
-    plt.show()
     plt.savefig(str(dataset) + '_' + str(num_samples) + '_' + str(table_size) + '_' + str(bhr_len) + '_' + str(lr) + 'bpred.png')
 
 if __name__ == '__main__':
