@@ -137,13 +137,13 @@ def train(pid, trace_file, lr, bhr_len, table_size, num_samples, results):
     print("{} ({}): miss = {} / {}; acc = {:0.2f}%; missPerKI = {:0.3f}".format(
       dataset, inst_count, (total - correct), total, (correct/total)*100.0, (1000.0 * (total - correct)) / inst_count))
     plt.plot(mpkis)
-    plt.ylabel('Local missPerKI')
+    plt.ylabel('Temporal missPerKI')
     plt.xlabel('Num predictions * 1000')
     plt.show()
     plt.savefig(str(dataset) + '_' + str(num_samples) + '_' + str(table_size) + '_' + str(bhr_len) + '_' + str(lr) + 'bpred.png')
 
 if __name__ == '__main__':
-  NUM_SAMPLES = 100000
+  NUM_SAMPLES = 5000000
   TABLE_SIZE = 512
   BHR_LEN = 16
   LR = 0.15
