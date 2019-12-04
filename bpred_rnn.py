@@ -64,23 +64,22 @@ class BranchTraceDataset(torch.utils.data.Dataset):
     return os.path.basename(self.trace_path)
 
 class BPredFPNet(torch.nn.Module):
-  def __init__(self, bhr_len):
+  def __init__(self, bhr_len, hidden_size):
     super(BPredFPNet, self).__init__()
-    self.rnn = torch.nn.GRU(1, bhr_len)
-    self.fc = torch.nn.Linear(bhr_len, 2)
+    self.rnn = torch.nn.GRU(bhr_len, hidden_size)
+    #self.fc = torch.nn.Linear(hidden_size, 2)
     self.lsf = torch.nn.LogSoftmax(2)
     self.lossfunc = nn.CrossEntropyLoss(reduction='sum')
   
   def forward(self, data, h=None):
     x,h  = self.rnn(data, h)
-    x = self.fc(x)
     x = self.lsf(x)
     return x, h
 
   def loss(self, prediction, label):
     return self.lossfunc(prediction.view(-1, 2), label.view(-1))
 
-def train(pid, trace_file, bhr_len, table_size, num_samples, results):
+def train(pid, trace_file, hidden_size, bhr_len, table_size, num_samples, results):
   """
   Branch prediction training routine
 
@@ -89,18 +88,19 @@ def train(pid, trace_file, bhr_len, table_size, num_samples, results):
 
   pid -- process id
   trace_file -- branch trace data file
+  hidden_size -- hidden state len
   bhr_len -- branch history register len
   table_size -- Number of unique hash values
   num_samples -- Number of samples to train on
   results -- result dict
   """
-  dataset = BranchTraceDataset(trace_file, 1, NUM_SAMPLES)
+  dataset = BranchTraceDataset(trace_file, bhr_len, NUM_SAMPLES)
 
   mdl_table = []
   optim_table = []
   hidden_table = []
   for i in range(table_size):
-    model = BPredFPNet(BHR_LEN)
+    model = BPredFPNet(bhr_len, hidden_size)
     mdl_table += [model]
     optim_table += [optim.Adam(model.parameters(), lr=LR)]
     hidden_table += [None]
@@ -145,17 +145,18 @@ def train(pid, trace_file, bhr_len, table_size, num_samples, results):
 if __name__ == '__main__':
   NUM_SAMPLES = 10000
   TABLE_SIZE = 512
-  BHR_LEN = 4
-  LR = 0.5
+  HIDDEN_SIZE = 2
+  BHR_LEN = 16
+  LR = 0.15
 
-  print("\nSamples={}; TABLE_SIZE={}; BHR_LEN={}; LR={}\n".format(
-    NUM_SAMPLES, TABLE_SIZE, BHR_LEN, LR))
+  print("\nSamples={}; TABLE_SIZE={}; HIDDEN_SIZE={}; BHR_LEN={}; LR={}\n".format(
+    NUM_SAMPLES, TABLE_SIZE, HIDDEN_SIZE, BHR_LEN, LR))
 
   jobs = []
   results = mp.Manager().dict()
 
   for i in range(1, len(sys.argv)):
-    p = mp.Process(target=train, args=(i, sys.argv[i], BHR_LEN, TABLE_SIZE, NUM_SAMPLES, results))
+    p = mp.Process(target=train, args=(i, sys.argv[i], HIDDEN_SIZE, BHR_LEN, TABLE_SIZE, NUM_SAMPLES, results))
     jobs.append(p)
     p.start()
 
@@ -168,5 +169,5 @@ if __name__ == '__main__':
     miss += results[key][0]
     inst_count += results[key][1]
 
-  print("Samples={}; TABLE_SIZE={}; BHR_LEN={}; LR={}; Total missPerKI = {:0.3f}".format(
-    NUM_SAMPLES, TABLE_SIZE, BHR_LEN, LR, (1000.0 * miss) / inst_count))
+  print("Samples={}; TABLE_SIZE={}; HIDDEN_SIZE={}; BHR_LEN={}; LR={}; Total missPerKI = {:0.3f}".format(
+    NUM_SAMPLES, TABLE_SIZE, HIDDEN_SIZE, BHR_LEN, LR, (1000.0 * miss) / inst_count))

@@ -131,7 +131,7 @@ if __name__ == '__main__':
   NUM_SAMPLES = 10000
   TABLE_SIZE = 512
   BHR_LEN = 16
-  LR = 0.5
+  LR = 0.15
 
   print("\nSamples={}; TABLE_SIZE={}; BHR_LEN={}; LR={}\n".format(
     NUM_SAMPLES, TABLE_SIZE, BHR_LEN, LR))
