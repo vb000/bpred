@@ -66,17 +66,19 @@ class BranchTraceDataset(torch.utils.data.Dataset):
 class BPredFPNet(torch.nn.Module):
   def __init__(self, bhr_len):
     super(BPredFPNet, self).__init__()
-    self.fc1 = torch.nn.Linear(bhr_len, 2)
-    self.lsf = torch.nn.LogSoftmax(1)
+    self.rnn = torch.nn.GRU(1, bhr_len)
+    self.fc = torch.nn.Linear(bhr_len, 2)
+    self.lsf = torch.nn.LogSoftmax(2)
     self.lossfunc = nn.CrossEntropyLoss(reduction='sum')
   
-  def forward(self, data):
-    x = self.fc1(data)
+  def forward(self, data, h=None):
+    x,h  = self.rnn(data, h)
+    x = self.fc(x)
     x = self.lsf(x)
-    return x
+    return x, h
 
   def loss(self, prediction, label):
-    return self.lossfunc(prediction, label)
+    return self.lossfunc(prediction.view(-1, 2), label.view(-1))
 
 def train(pid, trace_file, bhr_len, table_size, num_samples, results):
   """
@@ -92,14 +94,16 @@ def train(pid, trace_file, bhr_len, table_size, num_samples, results):
   num_samples -- Number of samples to train on
   results -- result dict
   """
-  dataset = BranchTraceDataset(trace_file, BHR_LEN, NUM_SAMPLES)
+  dataset = BranchTraceDataset(trace_file, 1, NUM_SAMPLES)
 
   mdl_table = []
   optim_table = []
+  hidden_table = []
   for i in range(table_size):
     model = BPredFPNet(BHR_LEN)
     mdl_table += [model]
-    optim_table += [optim.SGD(model.parameters(), lr=LR)]
+    optim_table += [optim.Adam(model.parameters(), lr=LR)]
+    hidden_table += [None]
   
   try:
     correct = 0
@@ -108,9 +112,20 @@ def train(pid, trace_file, bhr_len, table_size, num_samples, results):
       table_idx = pc % table_size
       model = mdl_table[table_idx]
       optimizer = optim_table[table_idx]
+      hidden = hidden_table[table_idx]
+
+      if hidden is not None:
+        def repackage_hidden(h):
+          """Wraps hidden states in new Tensors, to detach them from their history."""
+          if isinstance(h, torch.Tensor):
+            return h.detach()
+          else:
+            return tuple(repackage_hidden(v) for v in h)
+
+        hidden = repackage_hidden(hidden)
 
       optimizer.zero_grad()
-      output = model(data)
+      output, hidden = model(data.unsqueeze(0), hidden)
       loss = model.loss(output, label)
       loss.backward()
       optimizer.step()
@@ -130,7 +145,7 @@ def train(pid, trace_file, bhr_len, table_size, num_samples, results):
 if __name__ == '__main__':
   NUM_SAMPLES = 10000
   TABLE_SIZE = 512
-  BHR_LEN = 16
+  BHR_LEN = 4
   LR = 0.5
 
   print("\nSamples={}; TABLE_SIZE={}; BHR_LEN={}; LR={}\n".format(
